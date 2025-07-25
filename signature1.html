@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>모바일 서명</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background-color: white;
+    }
+    canvas {
+      touch-action: none;
+      display: block;
+      width: 100vw;
+      height: 80vh;
+      border: 1px solid #000;
+      background-color: white;
+    }
+    .buttons {
+      display: flex;
+      justify-content: space-around;
+      margin: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="signatureCanvas"></canvas>
+  <div class="buttons">
+    <button onclick="clearCanvas()">지우기</button>
+    <button onclick="saveSignature()">이미지 저장</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("signatureCanvas");
+    const ctx = canvas.getContext("2d");
+    let drawing = false;
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight * 0.8;
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    window.addEventListener("load", resizeCanvas);
+    window.addEventListener("resize", resizeCanvas);
+
+    function getCoords(e) {
+      const rect = canvas.getBoundingClientRect();
+      if (e.touches && e.touches.length > 0) {
+        return {
+          x: e.touches[0].clientX - rect.left,
+          y: e.touches[0].clientY - rect.top
+        };
+      } else {
+        return {
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top
+        };
+      }
+    }
+
+    function startDraw(e) {
+      e.preventDefault();
+      drawing = true;
+      const pos = getCoords(e);
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+    }
+
+    function draw(e) {
+      if (!drawing) return;
+      e.preventDefault();
+      const pos = getCoords(e);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    function stopDraw(e) {
+      e.preventDefault();
+      drawing = false;
+    }
+
+    // 마우스 이벤트
+    canvas.addEventListener("mousedown", startDraw);
+    canvas.addEventListener("mousemove", draw);
+    canvas.addEventListener("mouseup", stopDraw);
+    canvas.addEventListener("mouseleave", stopDraw);
+
+    // 터치 이벤트
+    canvas.addEventListener("touchstart", startDraw);
+    canvas.addEventListener("touchmove", draw);
+    canvas.addEventListener("touchend", stopDraw);
+
+    function clearCanvas() {
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function saveSignature() {
+      const tempCanvas = document.createElement("canvas");
+      tempCanvas.width = canvas.width;
+      tempCanvas.height = canvas.height;
+      const tempCtx = tempCanvas.getContext("2d");
+
+      // 배경 흰색
+      tempCtx.fillStyle = "white";
+      tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+      tempCtx.drawImage(canvas, 0, 0);
+
+      const link = document.createElement("a");
+      link.href = tempCanvas.toDataURL("image/png");
+      link.download = "signature.png";
+      document.body.appendChild(link); // 반드시 DOM에 추가해야 일부 모바일 브라우저에서 작동
+      link.click();
+      document.body.removeChild(link);
+    }
+  </script>
+</body>
+</html>
